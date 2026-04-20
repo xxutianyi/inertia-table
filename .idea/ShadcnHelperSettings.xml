@@ -2082,6 +2082,18 @@
         <option name="homepage" value="https://www.remocn.dev/" />
         <option name="urlTemplate" value="https://www.remocn.dev/r/{name}.json" />
       </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-exabase" />
+        <option name="name" value="Exabase" />
+        <option name="namespace" value="@exabase" />
+        <option name="baseUrl" value="https://exawizards.com/exabase/design/registry" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="A collection of UI components based on the exaBase Design System, built with React and Tailwind CSS." />
+        <option name="homepage" value="https://exawizards.com/exabase/design/" />
+        <option name="urlTemplate" value="https://exawizards.com/exabase/design/registry/{name}.json" />
+      </RegistryConfigState>
     </registryConfigs>
   </component>
 </project>

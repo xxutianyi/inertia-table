@@ -59,7 +59,7 @@ function DataTableFilter<TData>({
                     {column.title}
                     {table.getFilteredValue(column) && (
                         <>
-                            <Separator orientation="vertical" className="mx-2 my-1 h-5" />
+                            <Separator orientation="vertical" className="mx-2 my-1! h-5!" />
                             <Badge variant="secondary" className="rounded-sm px-1 font-normal">
                                 {table.getFilteredItem(column)?.label}
                             </Badge>

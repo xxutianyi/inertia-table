@@ -1,7 +1,7 @@
+import type { PaginateData, TableColumn } from '@/typings';
 import { router } from '@inertiajs/react';
 import qs, { type ParsedQs } from 'qs';
 import { useState } from 'react';
-import type { PaginateData, TableColumn } from '../typings';
 
 export type DataTableHookProps<TData> = {
     rowKey: keyof TData;
@@ -264,7 +264,7 @@ export function useSimpleTable<TData>({
     }
 
     function getTotalPage() {
-        return Math.ceil(data.length / pageSize);
+        return data.length === 0 ? 1 : Math.ceil(data.length / pageSize);
     }
 
     function getCurrentPage() {
