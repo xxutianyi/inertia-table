@@ -1,5 +1,5 @@
 import './styles.css';
 
-export * from './components/luma/index';
-export { defineColumns } from './lib/utils';
-export * from './typings';
+export * from './components/router-table';
+export * from './components/table';
+export * from './lib/table';

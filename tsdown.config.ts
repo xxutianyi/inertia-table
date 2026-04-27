@@ -4,18 +4,10 @@ import { defineConfig } from 'tsdown';
 
 export default defineConfig({
     dts: true,
-    entry: [
-        './src/index.ts',
-        './src/components/luma/index.ts',
-        './src/components/lyra/index.ts',
-        './src/components/maia/index.ts',
-        './src/components/mira/index.ts',
-        './src/components/nova/index.ts',
-        './src/components/vega/index.ts',
-    ],
     exports: true,
     sourcemap: true,
     platform: 'browser',
+    css: { inject: true },
     plugins: [
         pluginBabel({
             presets: [reactCompilerPreset()],

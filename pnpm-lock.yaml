@@ -11,6 +11,9 @@ importers:
       '@inertiajs/react':
         specifier: ^3
         version: 3.0.3(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+      radix-ui:
+        specifier: ^1.4.3
+        version: 1.4.3(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       react:
         specifier: ^19.2.0
         version: 19.2.5
@@ -84,9 +87,6 @@ importers:
       qs:
         specifier: ^6.15.1
         version: 6.15.1
-      radix-ui:
-        specifier: ^1.4.3
-        version: 1.4.3(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       react-remove-scroll:
         specifier: ^2.7.2
         version: 2.7.2(@types/react@19.2.14)(react@19.2.5)

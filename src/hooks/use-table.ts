@@ -1,46 +1,155 @@
-import type { PaginateData, TableColumn } from '@/typings';
-import { router } from '@inertiajs/react';
-import qs, { type ParsedQs } from 'qs';
-import { useState } from 'react';
+'use client';
 
-export type DataTableHookProps<TData> = {
-    rowKey: keyof TData;
+import type { TableApi, TableColumn, TableData } from '@/lib/table';
+import { useEffect, useState } from 'react';
+
+export type UseTableProps<TData extends TableData> = {
+    rowKey?: string;
+    data?: TData[];
     columns: TableColumn<TData>[];
-    paginateData: PaginateData<TData>;
-    onRowSelection?: (keys: string[]) => void;
+    onSelectChange?: (rowKeys: string[]) => void;
+    saveStateToQuery?: boolean;
 };
 
-export function useDataTable<TData>({
-    rowKey,
-    columns,
-    paginateData,
-    onRowSelection,
-}: DataTableHookProps<TData>) {
-    const query = qs.parse(window.location.search.substring(1));
+export function useTable<TData extends TableData>(props: UseTableProps<TData>) {
+    const { rowKey, columns, data, onSelectChange } = props;
 
-    const [sorts, setSorts] = useState<string>(query?.['sorts'] as string);
-    const [search, setSearch] = useState<string>(query?.['search'] as string);
-    const [filters, setFilters] = useState<{ index: string; value?: string }[]>(
-        queryToFilter(query),
-    );
+    const [page, setPage] = useState<number>(1);
+    const [size, setSize] = useState<number>(10);
+
+    const [renderData, setRenderData] = useState<TData[]>();
 
     const [tableColumns, setTableColumns] = useState(columns);
     const [selectedRows, setSelectedRows] = useState<string[]>([]);
 
-    function onSelectedRowChange(newSelected: string[]) {
-        setSelectedRows(newSelected);
-        onRowSelection?.(newSelected);
+    function handleDataUpdate() {
+        const pageData = data?.slice(
+            Number(getSize()) * (getPage() - 1),
+            Number(getSize()) * getPage(),
+        );
+        setRenderData(pageData);
     }
 
+    useEffect(() => {
+        handleDataUpdate();
+    }, [page, size, data]);
+
+    /**
+     * 同步更新选中行
+     * @param newSelected
+     */
+    function onSelectedRowChange(newSelected: string[]) {
+        setSelectedRows(newSelected);
+        onSelectChange?.(newSelected);
+    }
+
+    /**
+     * 获取当前页数据
+     */
+    function getData() {
+        return renderData ?? [];
+    }
+
+    /**
+     * 获取当前页码
+     */
+    function getPage() {
+        return page;
+    }
+
+    /**
+     * 获取当前每页数
+     */
+    function getSize() {
+        return size.toString();
+    }
+
+    /**
+     * 获取当前页的行数
+     */
+    function getPageRows() {
+        return renderData?.length ?? 0;
+    }
+
+    /**
+     * 获取总页数
+     */
+    function getTotalPage() {
+        return data ? Math.ceil(data.length / size) : 1;
+    }
+
+    /**
+     * 获取Row Key
+     * @param dataItem
+     */
+    function getRowKey(dataItem: TData) {
+        return dataItem[rowKey ?? 'id'] as string;
+    }
+
+    /**
+     * 获取要显示的列
+     */
     function getColumns() {
         return tableColumns.filter((column) => !column.hidden);
     }
 
+    /**
+     * 获取可隐藏的列
+     */
     function getHideableColumns() {
         return tableColumns.filter((column) => column.hideable || (column.title && column.dataKey));
     }
 
-    function setColumnVisible(index: TableColumn<unknown>['index'], visible: boolean) {
+    /**
+     * 获取已选中的行Key
+     */
+    function getSelectedRows() {
+        return selectedRows;
+    }
+
+    /**
+     * 获取行的选中状态
+     * @param dataItem
+     */
+    function getRowSelectedState(dataItem: TData) {
+        return !!selectedRows.find((row) => row === getRowKey(dataItem));
+    }
+
+    /**
+     * 获取全选的状态
+     */
+    function getRowSelectedAllState() {
+        if (selectedRows.length === 0) return false;
+        if (selectedRows.length === renderData?.length) return true;
+        return 'indeterminate';
+    }
+
+    /**
+     * 修改当前页面
+     * @param newPage
+     */
+    function setNewPage(newPage: number) {
+        if (newPage >= 1 && newPage <= getTotalPage()) {
+            setPage(newPage);
+        }
+    }
+
+    /**
+     * 修改每页数量
+     * @param newSize
+     */
+    function setNewSize(newSize: number | string) {
+        if (Number(newSize) > 0) {
+            setSize(Number(newSize));
+        }
+    }
+
+    /**
+     * 设置列可见性
+     * @param index
+     * @param visible
+     */
+    function setColumnVisibleState(index: TableColumn<any>['index'], visible: boolean) {
         setTableColumns(
             tableColumns.map((column) => {
                 if (column.index === index) column.hidden = !visible;
@@ -49,11 +158,12 @@ export function useDataTable<TData>({
         );
     }
 
-    function getRowKey(dataItem: TData) {
-        return dataItem[rowKey] as string;
-    }
-
-    function setRowSelected(dataItem: TData, selected: boolean | 'indeterminate') {
+    /**
+     * 设置行是否选中
+     * @param dataItem
+     * @param selected
+     */
+    function setRowSelectedState(dataItem: TData, selected: boolean | 'indeterminate') {
         onSelectedRowChange(
             selected
                 ? [...selectedRows, getRowKey(dataItem)]
@@ -61,266 +171,32 @@ export function useDataTable<TData>({
         );
     }
 
-    function getRowSelected(dataItem: TData) {
-        return !!selectedRows.find((row) => row === getRowKey(dataItem));
-    }
-
-    function setSelectedAll(selected: boolean | 'indeterminate') {
-        onSelectedRowChange(selected ? paginateData.data.map(getRowKey) : []);
-    }
-
-    function getSelectedAll() {
-        if (selectedRows.length === 0) return false;
-        if (selectedRows.length === paginateData.data.length) return true;
-        return 'indeterminate';
-    }
-
-    function getSelectedRows() {
-        return selectedRows;
-    }
-
-    function getPageSize() {
-        return `${paginateData.per_page}`;
-    }
-
-    function getPageRows() {
-        return paginateData.to - paginateData.from + 1;
-    }
-
-    function getTotalPage() {
-        return paginateData.last_page;
-    }
-
-    function getCurrentPage() {
-        return paginateData.current_page;
-    }
-
-    function getPaginateLinks() {
-        return {
-            first: {
-                action: () => router.get(paginateData.first_page_url),
-                disabled: paginateData.current_page === 1,
-            },
-            prev: {
-                action: () => router.get(paginateData.prev_page_url ?? ''),
-                disabled: !paginateData.prev_page_url,
-            },
-            next: {
-                action: () => router.get(paginateData.next_page_url ?? ''),
-                disabled: !paginateData.next_page_url,
-            },
-            last: {
-                action: () => router.get(paginateData.last_page_url),
-                disabled: paginateData.current_page === paginateData.last_page,
-            },
-        };
-    }
-
-    function getPaginateFullLinks() {
-        return paginateData.links;
-    }
-
-    function getSearch() {
-        return search ?? '';
-    }
-
-    function onSearchChange(search?: string) {
-        setSearch(search ?? '');
-        router.get(paginateData.path, { search }, { preserveState: true });
-    }
-
-    function sortsToString(sortMetas?: { column: string; direction?: string }[]) {
-        return sortMetas?.map((s) => `${s.column}:${s.direction}`).join(',');
-    }
-
-    function stringToSorts(string?: string) {
-        if (!string) return [];
-        return string
-            .split(',')
-            .map((sort) => {
-                const sortMeta = sort.split(':');
-
-                return sortMeta.length === 2
-                    ? {
-                          column: sortMeta?.[0] ?? '',
-                          direction: sortMeta?.[1]?.toLowerCase() === 'asc' ? 'asc' : 'desc',
-                      }
-                    : undefined;
-            })
-            .filter((sort) => !!sort);
-    }
-
-    function getSorts() {
-        return stringToSorts(sorts);
-    }
-
-    function getSortableDirection(column: TableColumn<any>) {
-        return getSorts()?.find((sort) => sort.column === column.index)?.direction;
-    }
-
-    function onSortsChange(sort: { column: string; direction?: string }) {
-        const sorts = sortsToString(
-            sort.direction
-                ? [...getSorts().filter((s) => s.column !== sort.column), sort]
-                : getSorts().filter((s) => s.column !== sort.column),
-        );
-
-        setSorts(sorts ?? '');
-        router.get(paginateData.path, { sorts }, { preserveState: true });
-    }
-
-    function queryToFilter(queryString: ParsedQs) {
-        const columns = getFilterableColumns().map((c) => c.index);
-        return Object.keys(queryString)
-            .filter((key) => columns.includes(key))
-            .map((key) => ({
-                index: key as string,
-                value: queryString?.[key] as string | undefined,
-            }));
-    }
-
-    function filterToQuery(filters: { index: string; value?: string }[]) {
-        return filters.reduce<Record<string, any>>((query, item) => {
-            query[item.index] = item.value;
-            return query;
-        }, {});
-    }
-
-    function getFilters() {
-        return filters;
-    }
-
-    function getFilteredItem(column: TableColumn<any>) {
-        return column.filter?.find((filter) => filter.value == getFilteredValue(column));
-    }
-
-    function getFilteredValue(column: TableColumn<any>) {
-        return getFilters()?.find((filter) => filter.index == column.index)?.value;
-    }
-
-    function getFilterableColumns() {
-        return columns.filter(
-            (column) => column.title && column.filter && column.filter.length > 0,
-        );
-    }
-
-    function onFilterChange(filter: { index: string; value?: string }) {
-        const filters = filter.value
-            ? [...getFilters().filter((f) => f.index != filter.index), filter]
-            : getFilters().filter((f) => f.index != filter.index);
-
-        setFilters(filters);
-        router.get(paginateData.path, filterToQuery(filters), { preserveState: true });
+    /**
+     * 设置行是否全选
+     * @param selected
+     */
+    function setRowSelectedAllState(selected: boolean | 'indeterminate') {
+        onSelectedRowChange(selected && renderData ? renderData?.map(getRowKey) : []);
     }
 
     return {
-        getColumns,
-        getHideableColumns,
-        setColumnVisible,
-        setRowSelected,
-        getRowSelected,
-        setSelectedAll,
-        getSelectedAll,
-        getSelectedRows,
-        getPageSize,
+        getData,
+        getPage,
+        getSize,
         getPageRows,
         getTotalPage,
-        getCurrentPage,
-        getPaginateLinks,
-        getPaginateFullLinks,
-        getSearch,
-        onSearchChange,
-        getSorts,
-        getSortableDirection,
-        onSortsChange,
-        getFilteredItem,
-        getFilteredValue,
-        getFilterableColumns,
-        onFilterChange,
-    };
-}
+        getColumns,
+        getHideableColumns,
+        getSelectedRows,
+        getRowSelectedState,
+        getRowSelectedAllState,
 
-export function useSimpleTable<TData>({
-    data,
-    defaultPageSize = 10,
-}: {
-    data: TData[];
-    defaultPageSize?: number;
-}) {
-    const [pageSize, setPageSize] = useState(defaultPageSize);
-    const [currentPage, setCurrentPage] = useState(1);
+        setNewPage,
+        setNewSize,
+        setColumnVisibleState,
+        setRowSelectedState,
+        setRowSelectedAllState,
 
-    function onPageSizeChange(newPageSize: string) {
-        setPageSize(Number(newPageSize));
-        setCurrentPage(1);
-    }
-
-    function onCurrentPageChange(newCurrentPage: number) {
-        setCurrentPage(newCurrentPage);
-    }
-
-    function getPageSize() {
-        return `${pageSize}`;
-    }
-
-    function getTotalPage() {
-        return data.length === 0 ? 1 : Math.ceil(data.length / pageSize);
-    }
-
-    function getCurrentPage() {
-        return currentPage;
-    }
-
-    function getCurrentPageData() {
-        return data.slice(pageSize * (currentPage - 1), pageSize * currentPage);
-    }
-
-    function toFirstPage() {
-        onCurrentPageChange(1);
-    }
-
-    function disableFirstPage() {
-        return getCurrentPage() === 1;
-    }
-
-    function toLastPage() {
-        onCurrentPageChange(getTotalPage());
-    }
-
-    function disableLastPage() {
-        return getCurrentPage() === getTotalPage();
-    }
-
-    function toPrevPage() {
-        onCurrentPageChange(getCurrentPage() - 1);
-    }
-
-    function disablePrevPage() {
-        return getCurrentPage() === 1;
-    }
-
-    function toNextPage() {
-        onCurrentPageChange(getCurrentPage() + 1);
-    }
-
-    function disableNextPage() {
-        return getCurrentPage() === getTotalPage();
-    }
-
-    return {
-        onPageSizeChange,
-        onCurrentPageChange,
-        getPageSize,
-        getTotalPage,
-        getCurrentPage,
-        getCurrentPageData,
-        toFirstPage,
-        disableFirstPage,
-        toLastPage,
-        disableLastPage,
-        toPrevPage,
-        disablePrevPage,
-        toNextPage,
-        disableNextPage,
-    };
+        shouldAddSelectColumn: () => !!onSelectChange,
+    } satisfies TableApi<TData>;
 }
