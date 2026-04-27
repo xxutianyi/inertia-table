@@ -42,10 +42,10 @@ class UserController extends Controller
 
 ```tsx
 // user/index.tsx
-import { defineColumns, DataTable, type PaginateData } from '@winglab/inertia-table';
+import { ColumnsDef, RouterTable, type PaginateData } from '@winglab/inertia-table';
 
 export default function Users({ data }: { data: PaginateData<UserType> }) {
-    const columns = defineColumns<UserType>([
+    const columns = ColumnsDef<UserType>([
         {
             dataKey: 'name',
             title: 'User',
@@ -89,7 +89,7 @@ export default function Users({ data }: { data: PaginateData<UserType> }) {
 
     return (
         <Layout>
-            <DataTable columns={columns} paginateData={data} />
+            <RouterTable columns={columns} data={data} />
         </Layout>
     );
 }
@@ -118,10 +118,10 @@ class UserController extends Controller
 
 ```tsx
 // user/index.tsx
-import {defineColumns, SimpleTable} from '@winglab/inertia-table';
+import {ColumnsDef, Table} from '@winglab/inertia-table';
 
 export default function Users({data}: { data: UserType[] }) {
-    const columns = defineColumns<UserType>([
+    const columns = ColumnsDef<UserType>([
         {
             dataKey: 'name',
             title: 'User',
@@ -165,7 +165,7 @@ export default function Users({data}: { data: UserType[] }) {
 
     return (
         <Layout>
-            <SimpleTable columns={columns} data={data}/>
+            <Table columns={columns} data={data}/>
         </Layout>
     );
 }
