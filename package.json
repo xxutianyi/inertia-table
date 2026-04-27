@@ -1,6 +1,6 @@
 {
     "name": "@winglab/inertia-table",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "inertia+laravel table component using shadcn/ui",
     "keywords": [
         "inertia",
